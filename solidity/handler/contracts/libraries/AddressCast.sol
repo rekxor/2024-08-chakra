@@ -11,6 +11,7 @@ library AddressCast {
         result = uint256(uint160(_address));
     }
 
+//q. test these via chisel please
     function to_address(
         bytes32 _address
     ) internal pure returns (address result) {

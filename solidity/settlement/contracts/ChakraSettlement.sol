@@ -82,6 +82,8 @@ contract ChakraSettlement is BaseSettlement {
      * @param _required_validators The number of required validators
      * @param _verify_contract The verify contract
      */
+// @audit-constructor to disatbleInitializers()  isn't defined in this contract
+
     function initialize(
         string memory _chain_name,
         uint256 _chain_id,

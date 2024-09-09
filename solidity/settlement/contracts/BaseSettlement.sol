@@ -51,6 +51,8 @@ abstract contract BaseSettlement is
      * @param _required_validators The required validators number
      * @param _signature_verifier The Verifier contract address
      */
+// @audit-no initialize() is defined in this contract
+//it doesn't even have any guard to be called by owner or something.
     function _Settlement_init(
         string memory _chain_name,
         uint256 _chain_id,
@@ -59,6 +61,7 @@ abstract contract BaseSettlement is
         uint256 _required_validators,
         address _signature_verifier
     ) public {
+//doesn't call AccessControl_init_()
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
@@ -118,6 +121,7 @@ abstract contract BaseSettlement is
      * @notice Only manager can dot this
      * @param _required_validators The required validators number
      */
+
     function set_required_validators_num(
         uint256 _required_validators
     ) external onlyRole(MANAGER_ROLE) {
@@ -156,6 +160,7 @@ abstract contract BaseSettlement is
      * @notice Only owner can do this
      * @param _manager The manager address
      */
+//audit-low - manager can call renounceOwnership() to self revoke.
     function remove_manager(address _manager) external onlyOwner {
         revokeRole(MANAGER_ROLE, _manager);
         emit ManagerRemoved(msg.sender, _manager);

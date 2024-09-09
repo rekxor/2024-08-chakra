@@ -3,6 +3,7 @@ version = 1
 
 [[package]]
 name = "openzeppelin"
+// qa- uses old version of the contract
 version = "0.14.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.14.0#f091c4f51ddeb10297db984acae965328c5a4e5b"
 

@@ -22,6 +22,7 @@ contract SettlementSignatureVerifier is
     // Using ECDSA library for bytes32
     using ECDSA for bytes32;
 
+//@audit-med  doesn't include constructor for `_disableIntializers()` 
     // Events for adding and removing managers and validators, and changing required validators
     event ValidatorAdded(address indexed manager, address indexed validator);
     event ValidatorRemoved(address indexed manager, address indexed validator);

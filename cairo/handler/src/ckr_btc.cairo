@@ -148,6 +148,8 @@ mod ckrBTC {
         fn remove_manager(ref self: ContractState, old_manager: ContractAddress) -> bool {
             let caller = get_caller_address();
             assert(self.chakra_managers.read(caller) == 1, Errors::NOT_MANAGER);
+//qa- no check if old_manager is actually a manager's address.
+//q. what if the caller (managerX) calls this function to remove all managers including himself?
             self.chakra_managers.write(old_manager, 0);
             self
                 .emit(
@@ -196,9 +198,11 @@ mod ckrBTC {
         }
 
 
+// called by operator
         fn mint_to(ref self: ContractState, to: ContractAddress, amount: u256) -> bool {
             let caller = get_caller_address();
             assert(self.chakra_operators.read(caller) == 1, Errors::NOT_OPERATOR);
+q. // check if this uses vulnerable version of OZ's erc20?
             let old_balance = self.erc20.balance_of(to);
             self.erc20.mint(to, amount);
             let new_balance = self.erc20.balance_of(to);
@@ -206,6 +210,7 @@ mod ckrBTC {
         }
 
 
+// called by operator
         fn burn_from(ref self: ContractState, to: ContractAddress, amount: u256) -> bool {
             let caller = get_caller_address();
             assert(self.chakra_operators.read(caller) == 1, Errors::NOT_OPERATOR);

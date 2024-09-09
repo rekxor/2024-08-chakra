@@ -105,6 +105,7 @@ mod ERC20Handler{
 
     #[abi(embed_v0)]
     impl ERC20HandlerImpl of IERC20Handler<ContractState> {
+//q.only callable by settlement address
         fn receive_cross_chain_msg(ref self: ContractState, cross_chain_msg_id: u256, from_chain: felt252, to_chain: felt252,
         from_handler: u256, to_handler: ContractAddress, payload: Array<u8>) -> bool{
             assert(to_handler == get_contract_address(),'error to_handler');

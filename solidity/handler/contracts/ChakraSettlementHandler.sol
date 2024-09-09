@@ -62,6 +62,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
      * @param chain_name The name of the chain
      * @param handler The handler address to remove
      */
+//q. frontrunnning this calls?
     function remove_handler(
         string memory chain_name,
         uint256 handler
@@ -108,6 +109,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
      * @param to The recipient address
      * @param amount The amount to transfer
      */
+//to is the address of the recipient here denoted via uint256
     function cross_chain_erc20_settlement(
         string memory to_chain,
         uint256 to_handler,
@@ -120,6 +122,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         require(to_handler != 0, "Invalid to handler address");
         require(to_token != 0, "Invalid to token address");
 
+//@audit- why does it erc20_lock for all first mode MINTBURN should instead call _erc20_burn() right?
         if (mode == SettlementMode.MintBurn) {
             _erc20_lock(msg.sender, address(this), amount);
         } else if (mode == SettlementMode.LockUnlock) {
@@ -132,6 +135,13 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
 
         {
             // Increment nonce for the sender
+//i- nonce is incremented for caller, once in handler contract and then in settlement contract via settlement.send_cross_chain_msg(
+            //     to_chain,
+            //     msg.sender,
+            //     to_handler,
+            //     PayloadType.ERC20,
+            //     cross_chain_msg_bytes
+            // );
             nonce_manager[msg.sender] += 1;
         }
 
@@ -178,6 +188,14 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
                 )
             );
             // Create a erc20 transfer payload
+struct ERC20TransferPayload {
+    ERC20Method method_id; // The method identifier (should be Transfer for this struct)
+    uint256 from; // The address sending the tokens (as a uint256)
+    uint256 to; // The address receiving the tokens (as a uint256)
+    uint256 from_token; // The token address on the source chain (as a uint256)
+    uint256 to_token; // The token address on the destination chain (as a uint256)
+    uint256 amount; // The amount of tokens to transfer
+}
             ERC20TransferPayload memory payload = ERC20TransferPayload(
                 ERC20Method.Transfer,
                 AddressCast.to_uint256(msg.sender),
@@ -200,6 +218,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
             );
 
             // Send the cross chain msg
+// the below call is made to a public fn of contract
             settlement.send_cross_chain_msg(
                 to_chain,
                 msg.sender,
@@ -239,6 +258,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
      * @dev Lock erc20 token
      * @param from The lock token from account
      * @param to The locked token to account
+//qa- improper natspec below line *lock
      * @param amount The amount to unlock
      */
     function _erc20_lock(address from, address to, uint256 amount) internal {
@@ -265,6 +285,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         );
 
         // transfer tokens
+//q.  does some tokens silently fail if the allowance is not enough (not reverting)
         IERC20(token).transferFrom(from, to, amount);
     }
 
@@ -275,6 +296,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         );
 
         // transfer tokens
+//q. - fails for some tokens due to no return value check (already in 4naLyzer report).
         IERC20(token).transfer(to, amount);
     }
 
@@ -289,6 +311,8 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         return (payload_type == PayloadType.ERC20);
     }
 
+// OK
+//q. ERC-777 tokens allows reentrancy via hook.. use nonReentrant modifier
     /**
      * @dev Receives a cross-chain message
      * @param from_chain The source chain
@@ -318,6 +342,8 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         if (payload_type == PayloadType.ERC20) {
             // Cross chain transfer
             {
+receiver chain either mints or unlocks
+lly, source chain either burns or locks
                 // Decode transfer payload
                 ERC20TransferPayload memory transfer_payload = codec
                     .deocde_transfer(msg_payload);
@@ -354,6 +380,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         return false;
     }
 
+//i- called only by the settlement contract.
     /**
      * @dev Receives a cross-chain callback
      * @param txid The transaction ID
@@ -362,6 +389,8 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
      * @param status The status of the cross-chain message
      * @return bool True if successful, false otherwise
      */
+// based on the returning value from this callback(), 
+Also In the settlement contract it will either mark the `cross_chain_tx[txid]` status as Failed or Settled.
     function receive_cross_chain_callback(
         uint256 txid,
         string memory from_chain,
@@ -382,6 +411,7 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
 
         if (status == CrossChainMsgStatus.Success) {
             if (mode == SettlementMode.MintBurn) {
+// q. why is it burning in receive callback() shouldn't it be minting instead??
                 _erc20_burn(address(this), create_cross_txs[txid].amount);
             }
 
@@ -389,9 +419,17 @@ contract ChakraSettlementHandler is BaseSettlementHandler, ISettlementHandler {
         }
 
         if (status == CrossChainMsgStatus.Failed) {
+
+
+/ updates the status state in this handler contract. 
+/ if it fails here on handler side, then on settlement side also the status is = Failed (as settlement contract calls this fn to get the status on handler to updates it's own status)
+
+
             create_cross_txs[txid].status = CrossChainTxStatus.Failed;
         }
 
         return true;
     }
 }
+//OK
+/ Task- Please write the flow of functions and state changes from one fn to another (focussing on external fns for user actions)

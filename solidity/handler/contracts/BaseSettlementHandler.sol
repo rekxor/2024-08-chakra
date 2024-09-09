@@ -31,6 +31,7 @@ abstract contract BaseSettlementHandler is
     /**
      * @dev The settlement token mode
      */
+// means Dest chain mints and source chain Burns (on cross chain transfer) 
     enum SettlementMode {
         MintBurn,
         LockMint,
@@ -82,6 +83,7 @@ abstract contract BaseSettlementHandler is
     // =============== Storages ============================================================
     mapping(address => uint256) public nonce_manager;
     mapping(uint256 => CreatedCrossChainTx) public create_cross_txs;
+//q. this gets updated when sending cross_chain_erc20_settlement....why is it restricted to uint64 only?
     uint64 public cross_chain_msg_id_counter;
     /**
      * @dev The chain name

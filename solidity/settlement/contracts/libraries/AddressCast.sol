@@ -93,6 +93,7 @@ library AddressCast {
         // based on the length of the input bytes calldata array
         unchecked {
             uint256 offset = 32 - _addressBytes.length;
+//low- can cause to give result = result (if offset 0)
             result = result >> (offset * 8);
         }
     }
